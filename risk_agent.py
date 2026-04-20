@@ -25,17 +25,29 @@ def score_cluster(cluster: dict) -> dict:
     time_span = cluster["time_span_minutes"]
     time_factor = max(0.0, min(1.0, 1.0 - (time_span / 10.0)))
 
-    # IP factor: more accounts sharing an IP is more suspicious.
-    # 4 accounts → 0.5, 10+ accounts → 1.0
+    # Hub density factor: more accounts sharing one hub (IP or device)
+    # is more suspicious. 4 accounts → 0.5, 10+ accounts → 1.0
     acct_count = cluster["account_count"]
     ip_factor = min(1.0, acct_count / 10.0)
 
     # Age factor: younger accounts are more suspicious.
-    # All young → 1.0, none young → 0.0
-    age_factor = cluster["young_account_count"] / cluster["account_count"]
+    # Young account = <= 7 days old. Younger share → higher score.
+    # We use a weighted youth metric rather than a hard cutoff.
+    young_ratio = cluster["young_account_count"] / cluster["account_count"]
+    # Soften: if some accounts are older (like Pattern 3), score is lower.
+    age_factor = young_ratio
 
     score = 0.40 * time_factor + 0.30 * ip_factor + 0.30 * age_factor
-    score = round(score, 3)
+
+    # VPN rotation bonus: if a shared device is seen across several IPs,
+    # that's an explicit fraud tell (mules masking location). Add a small
+    # bonus so the detector doesn't under-rank device-rotation gangs.
+    if cluster.get("pattern_type") == "shared_device_burst":
+        unique_ips = cluster.get("unique_ip_count", 1)
+        if unique_ips >= cluster["account_count"] * 0.7:
+            score += 0.05  # VPN rotation boost
+
+    score = round(min(score, 1.0), 3)
 
     if score > 0.80:
         classification = "HIGH"
