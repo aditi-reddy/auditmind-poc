@@ -101,5 +101,5 @@ python run_pipeline.py
 
 ### 3. Review Outputs
 The pipeline outputs results directly to the `output/` directory:
-- `output/audit_report.md` — A clear, structured Markdown report outlining the flagged gang, its member nodes, and risk calculations.
-- `output/gang_graph.png` — A matplotlib-rendered network graph visualizing nodes (Accounts, IPs, SKUs) and connection edges.
+- `output/audit_report.md`: A clear, structured Markdown report outlining the flagged gang, its member nodes, and risk calculations.
+- `output/gang_graph.png`: A matplotlib-rendered network graph visualizing nodes (Accounts, IPs, SKUs) and connection edges.
